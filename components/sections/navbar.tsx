@@ -62,9 +62,18 @@ export function Navbar() {
           ))}
         </nav>
 
-        <Button className="hidden rounded-full bg-white/90 px-6 py-2 text-sm font-semibold text-black transition hover:bg-white md:inline-flex">
-          Book a Demo
-        </Button>
+        <div className="hidden items-center gap-3 md:flex">
+          <Button
+            variant="outline"
+            asChild
+            className="rounded-full border-white/30 bg-transparent px-5 py-2 text-sm font-medium text-white transition hover:border-white/50 hover:bg-white/5 hover:text-white"
+          >
+            <Link href="/login">Login</Link>
+          </Button>
+          <Button asChild className="rounded-full bg-white/90 px-5 py-2 text-sm font-semibold text-black transition hover:bg-white">
+            <Link href="/signup">Sign Up</Link>
+          </Button>
+        </div>
 
         <button
           className="inline-flex size-10 items-center justify-center rounded-full border border-white/10 text-white/80 transition hover:text-white md:hidden"
