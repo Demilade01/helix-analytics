@@ -1,6 +1,8 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useState } from "react"
 import { motion } from "framer-motion"
 
 import { fadeInUp, subtleScale } from "@/components/sections/motion-presets"
@@ -8,6 +10,27 @@ import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
 export default function LoginPage() {
+  const router = useRouter()
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+    setIsLoading(true)
+
+    // Demo login - accept any email and password
+    // In production, this will be replaced with actual API call
+    setTimeout(() => {
+      // Store demo auth state
+      localStorage.setItem("helix_auth", JSON.stringify({ email, isAuthenticated: true }))
+      setIsLoading(false)
+      router.push("/dashboard")
+    }, 500) // Simulate API delay
+  }
+
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#010203] text-slate-100">
       <div className="pointer-events-none absolute inset-0">
@@ -46,7 +69,13 @@ export default function LoginPage() {
               </p>
             </div>
 
-            <form className="space-y-6" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-6" onSubmit={handleSubmit}>
+              {error && (
+                <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                  {error}
+                </div>
+              )}
+
               <div className="space-y-2">
                 <label htmlFor="email" className="text-sm font-medium text-slate-300">
                   Email address
@@ -54,9 +83,12 @@ export default function LoginPage() {
                 <Input
                   id="email"
                   type="email"
-                  placeholder="you@company.com"
+                  placeholder="demo@helix.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full"
+                  disabled={isLoading}
                 />
               </div>
 
@@ -76,9 +108,15 @@ export default function LoginPage() {
                   id="password"
                   type="password"
                   placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   className="w-full"
+                  disabled={isLoading}
                 />
+                <p className="text-xs text-slate-500">
+                  Demo: Use any email and password to login
+                </p>
               </div>
 
               <div className="flex items-center gap-2">
@@ -86,6 +124,7 @@ export default function LoginPage() {
                   id="remember"
                   type="checkbox"
                   className="size-4 rounded border-white/20 bg-white/5 text-white focus:ring-2 focus:ring-white/20 focus:ring-offset-0"
+                  disabled={isLoading}
                 />
                 <label htmlFor="remember" className="text-sm text-slate-400">
                   Remember me for 30 days
@@ -94,9 +133,10 @@ export default function LoginPage() {
 
               <Button
                 type="submit"
-                className="w-full rounded-full bg-white px-6 py-6 text-base font-semibold text-[#010203] transition hover:bg-white/90"
+                disabled={isLoading}
+                className="w-full rounded-full bg-white px-6 py-6 text-base font-semibold text-[#010203] transition hover:bg-white/90 disabled:opacity-50"
               >
-                Sign in
+                {isLoading ? "Signing in..." : "Sign in"}
               </Button>
             </form>
 
