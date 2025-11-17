@@ -65,12 +65,13 @@ export function Navbar() {
         <div className="hidden items-center gap-3 md:flex">
           <Button
             variant="outline"
+            asChild
             className="rounded-full border-white/30 bg-transparent px-5 py-2 text-sm font-medium text-white transition hover:border-white/50 hover:bg-white/5 hover:text-white"
           >
-            Login
+            <Link href="/login">Login</Link>
           </Button>
-          <Button className="rounded-full bg-white/90 px-5 py-2 text-sm font-semibold text-black transition hover:bg-white">
-            Sign Up
+          <Button asChild className="rounded-full bg-white/90 px-5 py-2 text-sm font-semibold text-black transition hover:bg-white">
+            <Link href="/signup">Sign Up</Link>
           </Button>
         </div>
 
