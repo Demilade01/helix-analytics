@@ -31,7 +31,7 @@ export function CTASection() {
         </Button>
         <Button
           variant="outline"
-          className="w-full rounded-full border-white/30 bg-transparent px-8 py-6 text-base text-white hover:border-white/50 hover:bg-white/5 sm:w-auto"
+          className="w-full rounded-full border-white/30 bg-transparent px-8 py-6 text-base text-white hover:border-white/50 hover:bg-white/5 hover:text-white sm:w-auto"
         >
           Download Solution Brief
         </Button>

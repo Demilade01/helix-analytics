@@ -95,7 +95,7 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
               <Button
                 variant="outline"
                 onClick={handleLogout}
-                className="w-full rounded-lg border-white/30 bg-transparent text-sm text-white transition hover:border-white/50 hover:bg-white/5"
+                className="w-full rounded-lg border-white/30 bg-transparent text-sm text-white transition hover:border-white/50 hover:bg-white/5 hover:text-white"
               >
                 Logout
               </Button>

@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { AreaChart, Area, XAxis, YAxis, ResponsiveContainer } from "recharts"
 
 import { fadeInUp, staggerContainer, subtleScale } from "@/components/sections/motion-presets"
 
@@ -19,6 +20,21 @@ const kpiStats = [
   { label: "Revenue yield", value: 78, delta: "+1.6% vs plan" },
   { label: "Cash conversion", value: 64, delta: "+2.4% vs plan" },
   { label: "Risk coverage", value: 91, delta: "+3.1% vs plan" },
+]
+
+const demandCurveData = [
+  { week: "W1", value: 65 },
+  { week: "W2", value: 72 },
+  { week: "W3", value: 68 },
+  { week: "W4", value: 75 },
+  { week: "W5", value: 82 },
+  { week: "W6", value: 78 },
+  { week: "W7", value: 85 },
+  { week: "W8", value: 88 },
+  { week: "W9", value: 82 },
+  { week: "W10", value: 90 },
+  { week: "W11", value: 87 },
+  { week: "W12", value: 92 },
 ]
 
 export function AnalyticsPreviewSection() {
@@ -76,23 +92,54 @@ export function AnalyticsPreviewSection() {
                 <span>Rolling 12 weeks</span>
               </div>
               <div className="mt-4 h-full rounded-2xl bg-black/30">
-                <div className="h-full bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.2),_transparent)]">
-                  <svg viewBox="0 0 320 160" className="h-full w-full">
-                    <path
-                      d="M0 120 C 40 20, 80 140, 120 80 S 200 40, 240 110 280 150, 320 60"
-                      fill="none"
-                      stroke="url(#gradientLine)"
-                      strokeWidth="4"
-                      strokeLinecap="round"
-                    />
-                    <defs>
-                      <linearGradient id="gradientLine" x1="0%" y1="0%" x2="100%" y2="0%">
-                        <stop offset="0%" stopColor="#22d3ee" />
-                        <stop offset="50%" stopColor="#38bdf8" />
-                        <stop offset="100%" stopColor="#a855f7" />
-                      </linearGradient>
-                    </defs>
-                  </svg>
+                <div className="h-full bg-[radial-gradient(circle_at_top,_rgba(255,255,255,0.2),_transparent)] p-2">
+                  <ResponsiveContainer width="100%" height="100%">
+                    <AreaChart
+                      data={demandCurveData}
+                      margin={{ top: 0, right: 0, left: 0, bottom: 0 }}
+                      style={{
+                        transition: "all 0.3s ease-in-out",
+                      }}
+                    >
+                      <defs>
+                        <linearGradient id="previewGradient" x1="0" y1="0" x2="0" y2="1">
+                          <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.4} />
+                          <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                        </linearGradient>
+                        <linearGradient id="previewLineGradient" x1="0" y1="0" x2="1" y2="0">
+                          <stop offset="0%" stopColor="#22d3ee" />
+                          <stop offset="50%" stopColor="#38bdf8" />
+                          <stop offset="100%" stopColor="#a855f7" />
+                        </linearGradient>
+                      </defs>
+                      <XAxis
+                        dataKey="week"
+                        stroke="rgba(255,255,255,0.3)"
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "rgba(255,255,255,0.5)" }}
+                      />
+                      <YAxis
+                        stroke="rgba(255,255,255,0.3)"
+                        fontSize={10}
+                        tickLine={false}
+                        axisLine={false}
+                        tick={{ fill: "rgba(255,255,255,0.5)" }}
+                        domain={[0, 100]}
+                      />
+                      <Area
+                        type="monotone"
+                        dataKey="value"
+                        stroke="url(#previewLineGradient)"
+                        strokeWidth={3}
+                        fill="url(#previewGradient)"
+                        isAnimationActive={true}
+                        animationDuration={1500}
+                        animationEasing="ease-out"
+                      />
+                    </AreaChart>
+                  </ResponsiveContainer>
                 </div>
               </div>
             </div>

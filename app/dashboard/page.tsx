@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
 
 import { fadeInUp, staggerContainer } from "@/components/sections/motion-presets"
 
@@ -18,6 +19,21 @@ export default function DashboardPage() {
     { name: "Europe", value: 65, color: "from-[#22d3ee] to-[#a855f7]" },
     { name: "Asia Pacific", value: 91, color: "from-[#a855f7] to-[#38bdf8]" },
     { name: "LATAM", value: 84, color: "from-[#38bdf8] to-[#22d3ee]" },
+  ]
+
+  const demandCurveData = [
+    { week: "W1", value: 65 },
+    { week: "W2", value: 72 },
+    { week: "W3", value: 68 },
+    { week: "W4", value: 75 },
+    { week: "W5", value: 82 },
+    { week: "W6", value: 78 },
+    { week: "W7", value: 85 },
+    { week: "W8", value: 88 },
+    { week: "W9", value: 82 },
+    { week: "W10", value: 90 },
+    { week: "W11", value: 87 },
+    { week: "W12", value: 92 },
   ]
 
   return (
@@ -133,24 +149,65 @@ export default function DashboardPage() {
             <p className="mt-1 text-sm text-slate-400">Rolling 12 weeks</p>
           </div>
         </div>
-        <div className="h-64 rounded-xl border border-white/5 bg-gradient-to-tr from-[#22d3ee]/20 via-[#38bdf8]/10 to-transparent p-4">
+        <div className="h-64 rounded-xl border border-white/5 bg-linear-to-tr from-[#22d3ee]/20 via-[#38bdf8]/10 to-transparent p-4">
           <div className="h-full rounded-lg bg-black/30 p-4">
-            <svg viewBox="0 0 400 200" className="h-full w-full">
-              <path
-                d="M0 150 C 50 50, 100 170, 150 110 S 250 70, 300 140 350 180, 400 80"
-                fill="none"
-                stroke="url(#gradientLine)"
-                strokeWidth="3"
-                strokeLinecap="round"
-              />
-              <defs>
-                <linearGradient id="gradientLine" x1="0%" y1="0%" x2="100%" y2="0%">
-                  <stop offset="0%" stopColor="#22d3ee" />
-                  <stop offset="50%" stopColor="#38bdf8" />
-                  <stop offset="100%" stopColor="#a855f7" />
-                </linearGradient>
-              </defs>
-            </svg>
+            <ResponsiveContainer width="100%" height="100%">
+              <AreaChart
+                data={demandCurveData}
+                margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+                style={{
+                  transition: "all 0.3s ease-in-out",
+                }}
+              >
+                <defs>
+                  <linearGradient id="colorGradient" x1="0" y1="0" x2="0" y2="1">
+                    <stop offset="5%" stopColor="#22d3ee" stopOpacity={0.3} />
+                    <stop offset="95%" stopColor="#a855f7" stopOpacity={0} />
+                  </linearGradient>
+                </defs>
+                <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+                <XAxis
+                  dataKey="week"
+                  stroke="#64748B"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <YAxis
+                  stroke="#64748B"
+                  fontSize={12}
+                  tickLine={false}
+                  axisLine={false}
+                />
+                <Tooltip
+                  contentStyle={{
+                    backgroundColor: "rgba(1, 2, 3, 0.9)",
+                    border: "1px solid rgba(255, 255, 255, 0.1)",
+                    borderRadius: "8px",
+                    color: "#fff",
+                  }}
+                  labelStyle={{ color: "#64748B" }}
+                  animationDuration={200}
+                />
+                <Area
+                  type="monotone"
+                  dataKey="value"
+                  stroke="url(#lineGradient)"
+                  strokeWidth={3}
+                  fill="url(#colorGradient)"
+                  isAnimationActive={true}
+                  animationDuration={1500}
+                  animationEasing="ease-out"
+                />
+                <defs>
+                  <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+                    <stop offset="0%" stopColor="#22d3ee" />
+                    <stop offset="50%" stopColor="#38bdf8" />
+                    <stop offset="100%" stopColor="#a855f7" />
+                  </linearGradient>
+                </defs>
+              </AreaChart>
+            </ResponsiveContainer>
           </div>
         </div>
       </motion.div>
