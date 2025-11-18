@@ -4,8 +4,10 @@ import { motion } from "framer-motion"
 import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, AreaChart, Area } from "recharts"
 
 import { fadeInUp, staggerContainer } from "@/components/sections/motion-presets"
+import { useUser } from "@/lib/hooks/use-user"
 
 export default function DashboardPage() {
+  const { user } = useUser()
 
   const kpiData = [
     { label: "Revenue Yield", value: "78%", delta: "+1.6%", trend: "up" },
@@ -38,6 +40,30 @@ export default function DashboardPage() {
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
+      {/* User Context Header */}
+      {user && (
+        <motion.div
+          className="rounded-2xl border border-white/10 bg-white/5 p-4 backdrop-blur-xl"
+          initial="hidden"
+          animate="visible"
+          variants={fadeInUp}
+        >
+          <div className="flex flex-col gap-2 sm:flex-row sm:items-center sm:justify-between">
+            <div>
+              <h1 className="text-2xl font-semibold text-white sm:text-3xl">Profitability Dashboard</h1>
+              <p className="mt-1 text-sm text-slate-400">
+                {user.organization} • {user.sector}
+              </p>
+            </div>
+            <div className="flex items-center gap-2">
+              <span className="rounded-full border border-white/10 bg-white/5 px-3 py-1 text-xs font-medium text-slate-300">
+                {user.sector}
+              </span>
+            </div>
+          </div>
+        </motion.div>
+      )}
+
       {/* KPI Cards */}
       <motion.div
             className="grid gap-4 sm:grid-cols-2 lg:grid-cols-4"
@@ -58,7 +84,7 @@ export default function DashboardPage() {
                 <p className="mt-4 text-3xl font-semibold text-white">{kpi.value}</p>
                 <div className="mt-4 h-1.5 rounded-full bg-white/10">
                   <div
-                    className="h-full rounded-full bg-gradient-to-r from-[#22d3ee] via-[#38bdf8] to-[#a855f7]"
+                    className="h-full rounded-full bg-linear-to-r from-[#22d3ee] via-[#38bdf8] to-[#a855f7]"
                     style={{ width: kpi.value }}
                   />
                 </div>
@@ -93,7 +119,7 @@ export default function DashboardPage() {
                 </div>
                 <div className="h-2 rounded-full bg-white/10">
                   <div
-                    className={`h-full rounded-full bg-gradient-to-r ${region.color}`}
+                    className={`h-full rounded-full bg-linear-to-r ${region.color}`}
                     style={{ width: `${region.value}%` }}
                   />
                 </div>
