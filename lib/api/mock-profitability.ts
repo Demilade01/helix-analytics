@@ -2,6 +2,7 @@ import type { Sector } from "@/lib/hooks/use-user"
 import type {
   ProfitabilityData,
   ProfitabilityFilters,
+  ProfitabilityKPI,
   RevenueByDepartment,
   CostBreakdown,
   TimeSeriesDataPoint,
@@ -107,12 +108,12 @@ export async function fetchProfitabilityData(
   }
 
   // Generate KPIs
-  const kpis = [
+  const kpis: ProfitabilityKPI[] = [
     {
       label: "Gross Profit Margin",
       value: grossProfitMargin,
       delta: `${grossProfitMargin > 40 ? "+" : ""}${(grossProfitMargin - 40).toFixed(1)}% vs target`,
-      trend: grossProfitMargin > 40 ? "up" : "down",
+      trend: (grossProfitMargin > 40 ? "up" : "down") as "up" | "down",
       format: "percentage" as const,
       description: "Revenue minus cost of goods sold",
     },
@@ -120,7 +121,7 @@ export async function fetchProfitabilityData(
       label: "Operating Profit Margin",
       value: operatingProfitMargin,
       delta: `${operatingProfitMargin > 20 ? "+" : ""}${(operatingProfitMargin - 20).toFixed(1)}% vs target`,
-      trend: operatingProfitMargin > 20 ? "up" : "down",
+      trend: (operatingProfitMargin > 20 ? "up" : "down") as "up" | "down",
       format: "percentage" as const,
       description: "Profit after operating expenses",
     },
@@ -128,7 +129,7 @@ export async function fetchProfitabilityData(
       label: "Net Profit Margin",
       value: netProfitMargin,
       delta: `${netProfitMargin > 15 ? "+" : ""}${(netProfitMargin - 15).toFixed(1)}% vs target`,
-      trend: netProfitMargin > 15 ? "up" : "down",
+      trend: (netProfitMargin > 15 ? "up" : "down") as "up" | "down",
       format: "percentage" as const,
       description: "Final profit after all expenses",
     },
@@ -136,7 +137,7 @@ export async function fetchProfitabilityData(
       label: "Total Revenue",
       value: baseRevenue,
       delta: `+${((baseRevenue - 4500000) / 4500000 * 100).toFixed(1)}% vs last quarter`,
-      trend: "up",
+      trend: "up" as const,
       format: "currency" as const,
       description: "Total revenue generated",
     },
