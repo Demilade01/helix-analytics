@@ -2,10 +2,11 @@
 
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { useEffect, useState } from "react"
 import { BarChart3, LineChart, FileText, Settings, LogOut } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
+import { useUser } from "@/lib/hooks/use-user"
+import { DashboardProviders } from "./providers"
 
 const navItems = [
   { href: "/dashboard", label: "Overview", icon: BarChart3 },
@@ -14,26 +15,20 @@ const navItems = [
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ]
 
-export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
-  const [userEmail, setUserEmail] = useState<string | null>(null)
-  const [isLoading, setIsLoading] = useState(true)
-
-  useEffect(() => {
-    const authData = localStorage.getItem("helix_auth")
-    if (authData) {
-      const { email } = JSON.parse(authData)
-      setUserEmail(email)
-    } else {
-      router.push("/login")
-    }
-    setIsLoading(false)
-  }, [router])
+  const { user, isLoading, logout } = useUser()
 
   const handleLogout = () => {
-    localStorage.removeItem("helix_auth")
+    logout()
     router.push("/login")
+  }
+
+  // Redirect to login if not authenticated
+  if (!isLoading && !user) {
+    router.push("/login")
+    return null
   }
 
   if (isLoading) {
@@ -89,8 +84,9 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
 
             <div className="border-t border-white/10 pt-6">
               <div className="mb-4">
-                <p className="text-sm font-medium text-white">{userEmail}</p>
-                <p className="text-xs text-slate-400">Signed in</p>
+                <p className="text-sm font-medium text-white">{user?.email}</p>
+                <p className="text-xs text-slate-400">{user?.organization}</p>
+                <p className="mt-1 text-xs text-[#64748B]">{user?.sector}</p>
               </div>
               <Button
                 variant="outline"
@@ -147,6 +143,14 @@ export default function DashboardLayout({ children }: { children: React.ReactNod
         </nav>
       </div>
     </div>
+  )
+}
+
+export default function DashboardLayout({ children }: { children: React.ReactNode }) {
+  return (
+    <DashboardProviders>
+      <DashboardLayoutContent>{children}</DashboardLayoutContent>
+    </DashboardProviders>
   )
 }
 

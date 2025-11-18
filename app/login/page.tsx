@@ -21,13 +21,28 @@ export default function LoginPage() {
     setError("")
     setIsLoading(true)
 
-    // Demo login - accept any email and password
+    // Demo login - check if user exists in localStorage
     // In production, this will be replaced with actual API call
     setTimeout(() => {
-      // Store demo auth state
-      localStorage.setItem("helix_auth", JSON.stringify({ email, isAuthenticated: true }))
-      setIsLoading(false)
-      router.push("/dashboard")
+      // Check if user data exists (from signup)
+      const existingUser = localStorage.getItem("helix_auth")
+      if (existingUser) {
+        const userData = JSON.parse(existingUser)
+        // Update email if changed, but keep sector/organization from signup
+        const updatedUserData = {
+          ...userData,
+          email,
+          isAuthenticated: true,
+        }
+        localStorage.setItem("helix_auth", JSON.stringify(updatedUserData))
+        setIsLoading(false)
+        router.push("/dashboard")
+      } else {
+        // For demo: create a default user if none exists
+        // In production, this would be an API call to authenticate
+        setError("No account found. Please sign up first.")
+        setIsLoading(false)
+      }
     }, 500) // Simulate API delay
   }
 
@@ -115,7 +130,7 @@ export default function LoginPage() {
                   disabled={isLoading}
                 />
                 <p className="text-xs text-slate-500">
-                  Demo: Use any email and password to login
+                  Demo: Use the email and password from your signup
                 </p>
               </div>
 

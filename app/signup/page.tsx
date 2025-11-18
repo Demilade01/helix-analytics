@@ -1,13 +1,105 @@
 "use client"
 
 import Link from "next/link"
+import { useRouter } from "next/navigation"
+import { useEffect, useRef, useState } from "react"
+import { ChevronDown } from "lucide-react"
 import { motion } from "framer-motion"
 
 import { fadeInUp, subtleScale } from "@/components/sections/motion-presets"
+import type { Sector } from "@/lib/hooks/use-user"
 import { Button } from "@/components/ui/button"
 import { Input } from "@/components/ui/input"
 
+// Demo organizations by sector
+const organizationsBySector: Record<Sector, string[]> = {
+  Healthcare: ["City General Hospital", "Metro Health Center", "Regional Medical Group"],
+  "Banking & Capital Markets": ["First National Bank", "Global Capital Partners", "Metro Credit Union"],
+  "Retail & Ecommerce": ["TechMart Retail", "Global Commerce Inc", "Urban Marketplace"],
+  Energy: ["Green Energy Solutions", "National Power Corp", "Solar Dynamics"],
+  "Life Sciences": ["BioPharm Innovations", "MedTech Research Labs", "Genomic Solutions"],
+  "Public Sector": ["State Health Department", "Federal Finance Office", "City Planning Bureau"],
+}
+
 export default function SignUpPage() {
+  const router = useRouter()
+  const [firstName, setFirstName] = useState("")
+  const [lastName, setLastName] = useState("")
+  const [email, setEmail] = useState("")
+  const [password, setPassword] = useState("")
+  const [confirmPassword, setConfirmPassword] = useState("")
+  const [sector, setSector] = useState<Sector | "">("")
+  const [organization, setOrganization] = useState("")
+  const [isSectorOpen, setIsSectorOpen] = useState(false)
+  const [isOrgOpen, setIsOrgOpen] = useState(false)
+  const [error, setError] = useState("")
+  const [isLoading, setIsLoading] = useState(false)
+
+  const sectorRef = useRef<HTMLDivElement>(null)
+  const orgRef = useRef<HTMLDivElement>(null)
+
+  // Update organization options when sector changes
+  const availableOrganizations = sector ? organizationsBySector[sector] || [] : []
+
+  // Close dropdowns when clicking outside
+  useEffect(() => {
+    const handleClickOutside = (event: MouseEvent) => {
+      if (sectorRef.current && !sectorRef.current.contains(event.target as Node)) {
+        setIsSectorOpen(false)
+      }
+      if (orgRef.current && !orgRef.current.contains(event.target as Node)) {
+        setIsOrgOpen(false)
+      }
+    }
+
+    document.addEventListener("mousedown", handleClickOutside)
+    return () => {
+      document.removeEventListener("mousedown", handleClickOutside)
+    }
+  }, [])
+
+  const handleSubmit = async (e: React.FormEvent) => {
+    e.preventDefault()
+    setError("")
+
+    // Validation
+    if (!sector) {
+      setError("Please select a sector")
+      return
+    }
+
+    if (!organization) {
+      setError("Please select an organization")
+      return
+    }
+
+    if (password !== confirmPassword) {
+      setError("Passwords do not match")
+      return
+    }
+
+    if (password.length < 8) {
+      setError("Password must be at least 8 characters")
+      return
+    }
+
+    setIsLoading(true)
+
+    // Demo signup - store user data
+    // In production, this will be replaced with actual API call
+    setTimeout(() => {
+      // Type assertion is safe here because we validated sector is not empty above
+      const userData = {
+        email,
+        sector: sector as Sector, // Validated above that sector is not empty
+        organization,
+        isAuthenticated: true,
+      }
+      localStorage.setItem("helix_auth", JSON.stringify(userData))
+      setIsLoading(false)
+      router.push("/dashboard")
+    }, 500) // Simulate API delay
+  }
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#010203] text-slate-100">
       <div className="pointer-events-none absolute inset-0">
@@ -46,7 +138,13 @@ export default function SignUpPage() {
               </p>
             </div>
 
-            <form className="space-y-5" onSubmit={(e) => e.preventDefault()}>
+            <form className="space-y-5" onSubmit={handleSubmit}>
+              {error && (
+                <div className="rounded-lg border border-red-500/30 bg-red-500/10 px-4 py-3 text-sm text-red-400">
+                  {error}
+                </div>
+              )}
+
               <div className="grid gap-5 sm:grid-cols-2">
                 <div className="space-y-2">
                   <label htmlFor="firstName" className="text-sm font-medium text-slate-300">
@@ -56,8 +154,11 @@ export default function SignUpPage() {
                     id="firstName"
                     type="text"
                     placeholder="John"
+                    value={firstName}
+                    onChange={(e) => setFirstName(e.target.value)}
                     required
                     className="w-full"
+                    disabled={isLoading}
                   />
                 </div>
                 <div className="space-y-2">
@@ -68,8 +169,11 @@ export default function SignUpPage() {
                     id="lastName"
                     type="text"
                     placeholder="Doe"
+                    value={lastName}
+                    onChange={(e) => setLastName(e.target.value)}
                     required
                     className="w-full"
+                    disabled={isLoading}
                   />
                 </div>
               </div>
@@ -82,21 +186,99 @@ export default function SignUpPage() {
                   id="email"
                   type="email"
                   placeholder="you@company.com"
+                  value={email}
+                  onChange={(e) => setEmail(e.target.value)}
                   required
                   className="w-full"
+                  disabled={isLoading}
                 />
               </div>
 
-              <div className="space-y-2">
-                <label htmlFor="company" className="text-sm font-medium text-slate-300">
-                  Company name <span className="text-slate-500">(optional)</span>
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-slate-300">
+                  Sector
                 </label>
-                <Input
-                  id="company"
-                  type="text"
-                  placeholder="Acme Inc."
-                  className="w-full"
-                />
+                <div className="relative" ref={sectorRef}>
+                  <button
+                    type="button"
+                    onClick={() => setIsSectorOpen(!isSectorOpen)}
+                    disabled={isLoading}
+                    className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-50 backdrop-blur-xl"
+                  >
+                    <span className={sector ? "text-white" : "text-slate-400"}>
+                      {sector || "Select sector"}
+                    </span>
+                    <ChevronDown
+                      className={`size-4 text-slate-400 transition-transform ${isSectorOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {isSectorOpen && (
+                    <div className="absolute z-50 mt-2 w-full space-y-1 rounded-xl border border-white/20 bg-[#0f172a]/95 p-2 backdrop-blur-xl shadow-2xl shadow-black/60">
+                      {(Object.keys(organizationsBySector) as Sector[]).map((s) => (
+                        <button
+                          key={s}
+                          type="button"
+                          onClick={() => {
+                            setSector(s)
+                            setOrganization("") // Reset organization when sector changes
+                            setIsSectorOpen(false)
+                          }}
+                          disabled={isLoading}
+                          className={`w-full rounded-lg px-4 py-3 text-left text-sm font-medium transition ${
+                            sector === s
+                              ? "bg-[#3b82f6] text-white shadow-lg shadow-[#3b82f6]/30"
+                              : "bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white"
+                          } disabled:cursor-not-allowed disabled:opacity-50`}
+                        >
+                          {s}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
+              </div>
+
+              <div className="space-y-3">
+                <label className="text-sm font-medium text-slate-300">
+                  Organization
+                </label>
+                <div className="relative" ref={orgRef}>
+                  <button
+                    type="button"
+                    onClick={() => sector && setIsOrgOpen(!isOrgOpen)}
+                    disabled={isLoading || !sector}
+                    className="flex w-full items-center justify-between rounded-xl border border-white/10 bg-white/5 px-4 py-3 text-left text-sm font-medium text-slate-300 transition hover:border-white/20 hover:bg-white/8 disabled:cursor-not-allowed disabled:opacity-50 backdrop-blur-xl"
+                  >
+                    <span className={organization ? "text-white" : "text-slate-400"}>
+                      {organization || (sector ? "Select organization" : "Select a sector first")}
+                    </span>
+                    <ChevronDown
+                      className={`size-4 text-slate-400 transition-transform ${isOrgOpen ? "rotate-180" : ""}`}
+                    />
+                  </button>
+                  {isOrgOpen && availableOrganizations.length > 0 && (
+                    <div className="absolute z-50 mt-2 w-full space-y-1 rounded-xl border border-white/20 bg-[#0f172a]/95 p-2 backdrop-blur-xl shadow-2xl shadow-black/60">
+                      {availableOrganizations.map((org) => (
+                        <button
+                          key={org}
+                          type="button"
+                          onClick={() => {
+                            setOrganization(org)
+                            setIsOrgOpen(false)
+                          }}
+                          disabled={isLoading}
+                          className={`w-full rounded-lg px-4 py-3 text-left text-sm font-medium transition ${
+                            organization === org
+                              ? "bg-[#3b82f6] text-white shadow-lg shadow-[#3b82f6]/30"
+                              : "bg-white/5 text-slate-200 hover:bg-white/10 hover:text-white"
+                          } disabled:cursor-not-allowed disabled:opacity-50`}
+                        >
+                          {org}
+                        </button>
+                      ))}
+                    </div>
+                  )}
+                </div>
               </div>
 
               <div className="space-y-2">
@@ -107,8 +289,11 @@ export default function SignUpPage() {
                   id="password"
                   type="password"
                   placeholder="••••••••"
+                  value={password}
+                  onChange={(e) => setPassword(e.target.value)}
                   required
                   className="w-full"
+                  disabled={isLoading}
                 />
                 <p className="text-xs text-slate-500">
                   Must be at least 8 characters with uppercase, lowercase, and a number
@@ -123,8 +308,11 @@ export default function SignUpPage() {
                   id="confirmPassword"
                   type="password"
                   placeholder="••••••••"
+                  value={confirmPassword}
+                  onChange={(e) => setConfirmPassword(e.target.value)}
                   required
                   className="w-full"
+                  disabled={isLoading}
                 />
               </div>
 
@@ -149,9 +337,10 @@ export default function SignUpPage() {
 
               <Button
                 type="submit"
-                className="w-full rounded-full bg-white px-6 py-6 text-base font-semibold text-[#010203] transition hover:bg-white/90"
+                disabled={isLoading}
+                className="w-full rounded-full bg-white px-6 py-6 text-base font-semibold text-[#010203] transition hover:bg-white/90 disabled:opacity-50"
               >
-                Create account
+                {isLoading ? "Creating account..." : "Create account"}
               </Button>
             </form>
 
