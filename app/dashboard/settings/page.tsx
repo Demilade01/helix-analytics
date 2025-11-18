@@ -99,7 +99,7 @@ export default function SettingsPage() {
       >
         <Button
           variant="outline"
-          className="rounded-full border-white/30 bg-transparent px-6 py-2 text-white transition hover:border-white/50 hover:bg-white/5"
+          className="rounded-full border-white/30 bg-transparent px-6 py-2 text-white transition hover:border-white/50 hover:bg-white/5 hover:text-white"
         >
           Cancel
         </Button>

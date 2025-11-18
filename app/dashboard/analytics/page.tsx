@@ -1,6 +1,7 @@
 "use client"
 
 import { motion } from "framer-motion"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
 
 import { fadeInUp, staggerContainer } from "@/components/sections/motion-presets"
 
@@ -59,27 +60,58 @@ export default function AnalyticsPage() {
       >
         <h2 className="mb-6 text-xl font-semibold text-white">Performance Trend</h2>
         <div className="h-64 rounded-xl border border-white/5 bg-black/30 p-4">
-          <svg viewBox="0 0 400 200" className="h-full w-full">
-            <path
-              d="M 50 150 L 100 120 L 150 130 L 200 100 L 250 80 L 300 90 L 350 70"
-              fill="none"
-              stroke="url(#analyticsGradient)"
-              strokeWidth="3"
-              strokeLinecap="round"
-            />
-            <defs>
-              <linearGradient id="analyticsGradient" x1="0%" y1="0%" x2="100%" y2="0%">
-                <stop offset="0%" stopColor="#22d3ee" />
-                <stop offset="50%" stopColor="#38bdf8" />
-                <stop offset="100%" stopColor="#a855f7" />
-              </linearGradient>
-            </defs>
-          </svg>
-        </div>
-        <div className="mt-4 flex justify-between text-xs text-slate-400">
-          {chartData.map((item) => (
-            <span key={item.month}>{item.month}</span>
-          ))}
+          <ResponsiveContainer width="100%" height="100%">
+            <LineChart
+              data={chartData}
+              margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
+              style={{
+                transition: "all 0.3s ease-in-out",
+              }}
+            >
+              <CartesianGrid strokeDasharray="3 3" stroke="rgba(255,255,255,0.1)" />
+              <XAxis
+                dataKey="month"
+                stroke="#64748B"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <YAxis
+                stroke="#64748B"
+                fontSize={12}
+                tickLine={false}
+                axisLine={false}
+              />
+              <Tooltip
+                contentStyle={{
+                  backgroundColor: "rgba(1, 2, 3, 0.9)",
+                  border: "1px solid rgba(255, 255, 255, 0.1)",
+                  borderRadius: "8px",
+                  color: "#fff",
+                }}
+                labelStyle={{ color: "#64748B" }}
+                animationDuration={200}
+              />
+              <Line
+                type="monotone"
+                dataKey="value"
+                stroke="url(#lineGradient)"
+                strokeWidth={3}
+                dot={{ fill: "#22d3ee", r: 4 }}
+                activeDot={{ r: 6 }}
+                isAnimationActive={true}
+                animationDuration={1500}
+                animationEasing="ease-out"
+              />
+              <defs>
+                <linearGradient id="lineGradient" x1="0" y1="0" x2="1" y2="0">
+                  <stop offset="0%" stopColor="#22d3ee" />
+                  <stop offset="50%" stopColor="#38bdf8" />
+                  <stop offset="100%" stopColor="#a855f7" />
+                </linearGradient>
+              </defs>
+            </LineChart>
+          </ResponsiveContainer>
         </div>
       </motion.div>
     </div>

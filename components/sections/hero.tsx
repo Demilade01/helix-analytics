@@ -32,7 +32,7 @@ export function HeroSection() {
           </Button>
           <Button
             variant="outline"
-            className="w-full rounded-full border-white/30 bg-transparent px-6 py-5 text-sm text-white transition hover:border-white/50 hover:bg-white/5 sm:w-auto sm:px-8 sm:py-6 sm:text-base"
+            className="w-full rounded-full border-white/30 bg-transparent px-6 py-5 text-sm text-white transition hover:border-white/50 hover:bg-white/5 hover:text-white sm:w-auto sm:px-8 sm:py-6 sm:text-base"
           >
             View Platform Overview
           </Button>

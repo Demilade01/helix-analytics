@@ -54,7 +54,7 @@ export default function LoginPage() {
             className="relative rounded-2xl border border-white/10 bg-white/5 p-8 shadow-2xl shadow-black/40 backdrop-blur-xl sm:rounded-3xl sm:p-10"
             variants={fadeInUp}
           >
-            <div className="absolute inset-0 -z-10 rounded-2xl bg-gradient-to-br from-white/10 via-transparent to-[#64748B]/20 opacity-60 sm:rounded-3xl" />
+            <div className="absolute inset-0 -z-10 rounded-2xl bg-linear-to-br from-white/10 via-transparent to-[#64748B]/20 opacity-60 sm:rounded-3xl" />
 
             <div className="mb-8 text-center">
               <Link
