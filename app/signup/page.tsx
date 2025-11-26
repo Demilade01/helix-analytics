@@ -85,20 +85,38 @@ export default function SignUpPage() {
 
     setIsLoading(true)
 
-    // Demo signup - store user data
-    // In production, this will be replaced with actual API call
-    setTimeout(() => {
-      // Type assertion is safe here because we validated sector is not empty above
-      const userData = {
-        email,
-        sector: sector as Sector, // Validated above that sector is not empty
-        organization,
-        isAuthenticated: true,
+    try {
+      const response = await fetch("/api/auth/signup", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({
+          firstName,
+          lastName,
+          email,
+          password,
+          sector,
+          organization,
+        }),
+      })
+
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        setError(data?.error ?? "Unable to create account. Please try again.")
+        setIsLoading(false)
+        return
       }
-      localStorage.setItem("helix_auth", JSON.stringify(userData))
-      setIsLoading(false)
+
       router.push("/dashboard")
-    }, 500) // Simulate API delay
+    } catch (err) {
+      console.error("Signup error:", err)
+      setError("Unable to create account. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
   return (
     <div className="relative min-h-screen overflow-hidden bg-[#010203] text-slate-100">

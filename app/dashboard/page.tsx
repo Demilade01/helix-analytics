@@ -112,7 +112,11 @@ export default function DashboardPage() {
           variants={fadeInUp}
           style={{ zIndex: 1 }}
         >
-          <FiltersComponent sector={user.sector} filters={filters} onFiltersChange={setFilters} />
+          <FiltersComponent
+            sector={user.sector ?? "General"}
+            filters={filters}
+            onFiltersChange={setFilters}
+          />
         </motion.div>
       )}
 
