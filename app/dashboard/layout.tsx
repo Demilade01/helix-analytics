@@ -1,5 +1,6 @@
 "use client"
 
+import React from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
 import { BarChart3, LineChart, FileText, Settings, LogOut } from "lucide-react"
@@ -19,15 +20,21 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
   const router = useRouter()
   const pathname = usePathname()
   const { user, isLoading, logout } = useUser()
+  const displayName = user?.firstName?.trim() ? user.firstName : user?.email
 
-  const handleLogout = () => {
-    logout()
+  React.useEffect(() => {
+    if (!isLoading && !user) {
+      router.replace("/login")
+    }
+  }, [isLoading, user, router])
+
+  const handleLogout = async () => {
+    await logout()
     router.push("/login")
   }
 
   // Redirect to login if not authenticated
   if (!isLoading && !user) {
-    router.push("/login")
     return null
   }
 
@@ -84,13 +91,15 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
             <div className="border-t border-white/10 pt-6">
               <div className="mb-4">
-                <p className="text-sm font-medium text-white">{user?.email}</p>
+                <p className="text-sm font-medium text-white">{displayName}</p>
                 <p className="text-xs text-slate-400">{user?.organization}</p>
                 <p className="mt-1 text-xs text-[#64748B]">{user?.sector}</p>
               </div>
               <Button
                 variant="outline"
-                onClick={handleLogout}
+                onClick={() => {
+                  void handleLogout()
+                }}
                 className="w-full rounded-lg border-white/30 bg-transparent text-sm text-white transition hover:border-white/50 hover:bg-white/5 hover:text-white"
               >
                 Logout
@@ -133,7 +142,9 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
               )
             })}
             <button
-              onClick={handleLogout}
+              onClick={() => {
+                void handleLogout()
+              }}
               className="flex flex-col items-center gap-1 rounded-lg px-4 py-2 text-slate-400 transition hover:text-white"
             >
               <LogOut className="size-5" />

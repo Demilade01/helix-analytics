@@ -1,21 +1,28 @@
 "use client"
 
-import { createContext, useContext, useEffect, useState, type ReactNode } from "react"
+import { createContext, useCallback, useContext, useEffect, useState, type ReactNode } from "react"
 
-export type Sector = "Healthcare" | "Banking & Capital Markets" | "Retail & Ecommerce" | "Energy" | "Life Sciences" | "Public Sector"
+import type { AppUser } from "@/lib/types/user"
 
-export interface User {
-  email: string
-  sector: Sector
-  organization: string
-  isAuthenticated: boolean
+export type Sector =
+  | "Healthcare"
+  | "Banking & Capital Markets"
+  | "Retail & Ecommerce"
+  | "Energy"
+  | "Life Sciences"
+  | "Public Sector"
+
+export interface User extends AppUser {
+  sector: Sector | string | null
+  organization: string | null
 }
 
 interface UserContextType {
   user: User | null
   isLoading: boolean
   setUser: (user: User | null) => void
-  logout: () => void
+  refreshUser: () => Promise<void>
+  logout: () => Promise<void>
 }
 
 const UserContext = createContext<UserContextType | undefined>(undefined)
@@ -24,41 +31,52 @@ export function UserProvider({ children }: { children: ReactNode }) {
   const [user, setUserState] = useState<User | null>(null)
   const [isLoading, setIsLoading] = useState(true)
 
-  // Load user from localStorage on mount
-  useEffect(() => {
-    const loadUser = () => {
-      try {
-        const authData = localStorage.getItem("helix_auth")
-        if (authData) {
-          const parsed = JSON.parse(authData)
-          setUserState(parsed)
-        }
-      } catch (error) {
-        console.error("Error loading user from localStorage:", error)
-      } finally {
-        setIsLoading(false)
-      }
-    }
+  const refreshUser = useCallback(async () => {
+    setIsLoading(true)
+    try {
+      const response = await fetch("/api/auth/me", {
+        method: "GET",
+        credentials: "include",
+      })
 
-    loadUser()
+      if (!response.ok) {
+        setUserState(null)
+        return
+      }
+
+      const data = (await response.json()) as AppUser
+      setUserState({
+        ...data,
+        sector: data.sector ?? null,
+        organization: data.organization ?? null,
+      })
+    } catch (error) {
+      console.error("Error loading authenticated user:", error)
+      setUserState(null)
+    } finally {
+      setIsLoading(false)
+    }
   }, [])
 
-  // Sync user state with localStorage
+  useEffect(() => {
+    void refreshUser()
+  }, [refreshUser])
+
   const setUser = (newUser: User | null) => {
     setUserState(newUser)
-    if (newUser) {
-      localStorage.setItem("helix_auth", JSON.stringify(newUser))
-    } else {
-      localStorage.removeItem("helix_auth")
+  }
+
+  const logout = async () => {
+    try {
+      await fetch("/api/auth/logout", { method: "POST", credentials: "include" })
+    } catch (error) {
+      console.error("Error logging out:", error)
+    } finally {
+      setUserState(null)
     }
   }
 
-  const logout = () => {
-    setUser(null)
-    localStorage.removeItem("helix_auth")
-  }
-
-  return <UserContext.Provider value={{ user, isLoading, setUser, logout }}>{children}</UserContext.Provider>
+  return <UserContext.Provider value={{ user, isLoading, setUser, refreshUser, logout }}>{children}</UserContext.Provider>
 }
 
 export function useUser() {

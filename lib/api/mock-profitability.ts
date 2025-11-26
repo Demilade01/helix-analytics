@@ -20,14 +20,14 @@ const sectorDepartments: Record<Sector, string[]> = {
 
 // Generate mock profitability data based on sector and organization
 export async function fetchProfitabilityData(
-  sector: Sector,
+  sector: Sector | string,
   organization: string,
   filters?: ProfitabilityFilters
 ): Promise<ProfitabilityData> {
   // Simulate API delay
   await new Promise((resolve) => setTimeout(resolve, 500))
 
-  const departments = sectorDepartments[sector] || []
+  const departments = sectorDepartments[sector as Sector] || []
   const selectedDepartment = filters?.department
 
   // Base values (will be randomized slightly for realism)

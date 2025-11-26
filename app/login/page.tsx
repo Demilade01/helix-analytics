@@ -21,29 +21,30 @@ export default function LoginPage() {
     setError("")
     setIsLoading(true)
 
-    // Demo login - check if user exists in localStorage
-    // In production, this will be replaced with actual API call
-    setTimeout(() => {
-      // Check if user data exists (from signup)
-      const existingUser = localStorage.getItem("helix_auth")
-      if (existingUser) {
-        const userData = JSON.parse(existingUser)
-        // Update email if changed, but keep sector/organization from signup
-        const updatedUserData = {
-          ...userData,
-          email,
-          isAuthenticated: true,
-        }
-        localStorage.setItem("helix_auth", JSON.stringify(updatedUserData))
-        setIsLoading(false)
-        router.push("/dashboard")
-      } else {
-        // For demo: create a default user if none exists
-        // In production, this would be an API call to authenticate
-        setError("No account found. Please sign up first.")
-        setIsLoading(false)
+    try {
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+        },
+        credentials: "include",
+        body: JSON.stringify({ email, password }),
+      })
+
+      const data = await response.json().catch(() => null)
+
+      if (!response.ok) {
+        setError(data?.error ?? "Unable to sign in. Please try again.")
+        return
       }
-    }, 500) // Simulate API delay
+
+      router.push("/dashboard")
+    } catch (err) {
+      console.error("Login error:", err)
+      setError("Unable to sign in. Please try again.")
+    } finally {
+      setIsLoading(false)
+    }
   }
 
   return (

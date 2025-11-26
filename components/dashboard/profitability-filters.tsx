@@ -21,7 +21,7 @@ const sectorDepartments: Record<Sector, string[]> = {
 }
 
 interface ProfitabilityFiltersProps {
-  sector: Sector
+  sector: Sector | string
   filters: ProfitabilityFilters
   onFiltersChange: (filters: ProfitabilityFilters) => void
 }
@@ -30,7 +30,7 @@ export function ProfitabilityFilters({ sector, filters, onFiltersChange }: Profi
   const [isDepartmentOpen, setIsDepartmentOpen] = useState(false)
   const departmentRef = useRef<HTMLDivElement>(null)
 
-  const availableDepartments = sectorDepartments[sector] || []
+  const availableDepartments = sectorDepartments[sector as Sector] || []
 
   // Close department dropdown when clicking outside
   useEffect(() => {
