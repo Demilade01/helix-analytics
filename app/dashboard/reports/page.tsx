@@ -5,6 +5,7 @@ import { motion } from "framer-motion"
 
 import { fadeInUp, staggerContainer } from "@/components/sections/motion-presets"
 import { useUser } from "@/lib/hooks/use-user"
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface Report {
   id: string
@@ -22,10 +23,48 @@ interface Report {
   netMargin?: number
 }
 
+interface ReportDetail {
+  id: string
+  periodStart: string
+  periodEnd: string
+  organization: string
+  sector: string
+  currency: string
+  revenue: number
+  cost: number
+  profit: number
+  grossMargin: number
+  operatingMargin: number
+  netMargin: number
+  departmentMetrics: Array<{
+    department: string
+    revenue: number
+    cost: number
+    profit: number
+    margin: number
+    revenueShare: number
+  }>
+  costBreakdown: Array<{
+    category: string
+    amount: number
+    percentage: number
+  }>
+  kpis: Array<{
+    label: string
+    value: number
+    format: string
+    trend: string
+    deltaPercent: number | null
+  }>
+}
+
 export default function ReportsPage() {
   const { user } = useUser()
   const [reports, setReports] = useState<Report[]>([])
   const [isLoading, setIsLoading] = useState(true)
+  const [selectedReport, setSelectedReport] = useState<ReportDetail | null>(null)
+  const [isViewingReport, setIsViewingReport] = useState(false)
+  const [isLoadingReport, setIsLoadingReport] = useState(false)
 
   useEffect(() => {
     if (user?.organization) {
@@ -111,9 +150,25 @@ export default function ReportsPage() {
                   {report.status}
                 </span>
                 <button
-                  onClick={() => {
-                    // TODO: Implement report view modal or page
-                    console.log("View report:", report.id)
+                  onClick={async () => {
+                    setIsLoadingReport(true)
+                    setIsViewingReport(true)
+                    try {
+                      const response = await fetch(`/api/reports/${report.id}`, {
+                        method: "GET",
+                        credentials: "include",
+                      })
+                      if (!response.ok) {
+                        throw new Error("Failed to load report")
+                      }
+                      const data = (await response.json()) as ReportDetail
+                      setSelectedReport(data)
+                    } catch (error) {
+                      console.error("Error loading report:", error)
+                      setSelectedReport(null)
+                    } finally {
+                      setIsLoadingReport(false)
+                    }
                   }}
                   className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10"
                 >
@@ -125,6 +180,192 @@ export default function ReportsPage() {
         ))}
         </motion.div>
       )}
+
+      {/* Report Detail Dialog */}
+      <Dialog open={isViewingReport} onOpenChange={setIsViewingReport}>
+        <DialogContent className="max-h-[90vh] max-w-4xl border-white/10 bg-[#010203] text-white p-0">
+          <div className="flex max-h-[90vh] flex-col">
+            <DialogHeader className="shrink-0 border-b border-white/10 px-6 py-4">
+              <DialogTitle className="text-2xl font-semibold text-white">
+                {isLoadingReport
+                  ? "Loading Report"
+                  : selectedReport
+                    ? reports.find((r) => r.id === selectedReport.id)?.title || "Report Details"
+                    : "Report Details"}
+              </DialogTitle>
+              {selectedReport && (
+                <div className="mt-2 flex flex-wrap items-center gap-2 text-sm text-slate-400">
+                  <span>{selectedReport.organization}</span>
+                  <span>•</span>
+                  <span>{selectedReport.sector}</span>
+                  <span>•</span>
+                  <span>
+                    {new Date(selectedReport.periodStart).toLocaleDateString()} -{" "}
+                    {new Date(selectedReport.periodEnd).toLocaleDateString()}
+                  </span>
+                </div>
+              )}
+            </DialogHeader>
+
+            <div className="dialog-scrollable flex-1 overflow-y-auto overflow-x-hidden px-6 py-4">
+              {isLoadingReport ? (
+                <div className="flex items-center justify-center py-12">
+                  <div className="text-center">
+                    <div className="inline-block size-8 animate-spin rounded-full border-4 border-white/20 border-t-white"></div>
+                    <p className="mt-4 text-sm text-slate-400">Loading report...</p>
+                  </div>
+                </div>
+              ) : selectedReport ? (
+                <div className="space-y-6">
+                {/* Key Metrics */}
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-sm text-slate-400">Revenue</p>
+                    <p className="mt-2 truncate text-2xl font-semibold text-white">
+                      {new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: selectedReport.currency,
+                        minimumFractionDigits: 0,
+                      }).format(selectedReport.revenue)}
+                    </p>
+                  </div>
+                  <div className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-sm text-slate-400">Costs</p>
+                    <p className="mt-2 truncate text-2xl font-semibold text-white">
+                      {new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: selectedReport.currency,
+                        minimumFractionDigits: 0,
+                      }).format(selectedReport.cost)}
+                    </p>
+                  </div>
+                  <div className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-sm text-slate-400">Profit</p>
+                    <p className="mt-2 truncate text-2xl font-semibold text-white">
+                      {new Intl.NumberFormat("en-US", {
+                        style: "currency",
+                        currency: selectedReport.currency,
+                        minimumFractionDigits: 0,
+                      }).format(selectedReport.profit)}
+                    </p>
+                  </div>
+                </div>
+
+                {/* Margins */}
+                <div className="grid gap-4 sm:grid-cols-3">
+                  <div className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-sm text-slate-400">Gross Margin</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">{selectedReport.grossMargin.toFixed(1)}%</p>
+                  </div>
+                  <div className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-sm text-slate-400">Operating Margin</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">
+                      {selectedReport.operatingMargin.toFixed(1)}%
+                    </p>
+                  </div>
+                  <div className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4">
+                    <p className="text-sm text-slate-400">Net Margin</p>
+                    <p className="mt-2 text-2xl font-semibold text-white">{selectedReport.netMargin.toFixed(1)}%</p>
+                  </div>
+                </div>
+
+                {/* KPIs */}
+                {selectedReport.kpis.length > 0 && (
+                  <div>
+                    <h3 className="mb-4 text-lg font-semibold text-white">Key Performance Indicators</h3>
+                    <div className="grid gap-4 sm:grid-cols-2">
+                      {selectedReport.kpis.map((kpi) => (
+                        <div key={kpi.label} className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4">
+                          <p className="text-sm text-slate-400">{kpi.label}</p>
+                          <p className="mt-2 text-xl font-semibold text-white">
+                            {kpi.format === "percentage"
+                              ? `${kpi.value.toFixed(1)}%`
+                              : kpi.format === "currency"
+                                ? new Intl.NumberFormat("en-US", {
+                                    style: "currency",
+                                    currency: selectedReport.currency,
+                                    minimumFractionDigits: 0,
+                                  }).format(kpi.value)
+                                : kpi.value.toLocaleString()}
+                          </p>
+                          {kpi.deltaPercent !== null && (
+                            <p
+                              className={`mt-1 text-xs ${
+                                kpi.deltaPercent >= 0 ? "text-emerald-400" : "text-red-400"
+                              }`}
+                            >
+                              {kpi.deltaPercent >= 0 ? "+" : ""}
+                              {kpi.deltaPercent.toFixed(1)}% vs target
+                            </p>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Department Metrics */}
+                {selectedReport.departmentMetrics.length > 0 && (
+                  <div>
+                    <h3 className="mb-4 text-lg font-semibold text-white">Revenue by Department</h3>
+                    <div className="space-y-3">
+                      {selectedReport.departmentMetrics.map((dept) => (
+                        <div key={dept.department} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-white">{dept.department}</p>
+                              <p className="mt-1 text-sm text-slate-400">{dept.margin.toFixed(1)}% margin</p>
+                            </div>
+                            <div className="text-right">
+                              <p className="font-semibold text-white">
+                                {new Intl.NumberFormat("en-US", {
+                                  style: "currency",
+                                  currency: selectedReport.currency,
+                                  minimumFractionDigits: 0,
+                                }).format(dept.revenue)}
+                              </p>
+                              <p className="text-xs text-slate-400">{dept.revenueShare.toFixed(1)}% of total</p>
+                            </div>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Cost Breakdown */}
+                {selectedReport.costBreakdown.length > 0 && (
+                  <div>
+                    <h3 className="mb-4 text-lg font-semibold text-white">Cost Breakdown</h3>
+                    <div className="space-y-3">
+                      {selectedReport.costBreakdown.map((cost) => (
+                        <div key={cost.category} className="rounded-xl border border-white/10 bg-white/5 p-4">
+                          <div className="flex items-center justify-between">
+                            <div>
+                              <p className="font-medium text-white">{cost.category}</p>
+                              <p className="mt-1 text-sm text-slate-400">{cost.percentage.toFixed(0)}% of total costs</p>
+                            </div>
+                            <p className="font-semibold text-white">
+                              {new Intl.NumberFormat("en-US", {
+                                style: "currency",
+                                currency: selectedReport.currency,
+                                minimumFractionDigits: 0,
+                              }).format(cost.amount)}
+                            </p>
+                          </div>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+                </div>
+              ) : (
+                <div className="py-12 text-center text-slate-400">Failed to load report details.</div>
+              )}
+            </div>
+          </div>
+        </DialogContent>
+      </Dialog>
     </div>
   )
 }
