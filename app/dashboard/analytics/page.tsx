@@ -1,24 +1,88 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
-import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer, BarChart, Bar } from "recharts"
+import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContainer } from "recharts"
 
 import { fadeInUp, staggerContainer } from "@/components/sections/motion-presets"
+import { useUser } from "@/lib/hooks/use-user"
+
+interface AnalyticsData {
+  revenueAnalytics: { value: number; change: number; period: string }
+  costAnalysis: { value: number; change: number; period: string }
+  profitMargin: { value: number; change: number; period: string }
+  chartData: Array<{ month: string; value: number; revenue: number; cost: number; profit: number }>
+}
 
 export default function AnalyticsPage() {
-  const analyticsData = [
-    { name: "Revenue Analytics", value: 2450000, change: "+12.5%", period: "vs last quarter" },
-    { name: "Cost Analysis", value: 1820000, change: "-3.2%", period: "vs last quarter" },
-    { name: "Profit Margin", value: 630000, change: "+18.7%", period: "vs last quarter" },
-  ]
+  const { user } = useUser()
+  const [analyticsData, setAnalyticsData] = useState<AnalyticsData | null>(null)
+  const [isLoading, setIsLoading] = useState(true)
 
-  const chartData = [
-    { month: "Jan", value: 65 },
-    { month: "Feb", value: 72 },
-    { month: "Mar", value: 68 },
-    { month: "Apr", value: 75 },
-    { month: "May", value: 82 },
-    { month: "Jun", value: 78 },
+  useEffect(() => {
+    if (user?.organization) {
+      setIsLoading(true)
+      fetch("/api/analytics", {
+        method: "GET",
+        credentials: "include",
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            throw new Error(`Failed to fetch: ${res.status}`)
+          }
+          const data = (await res.json()) as AnalyticsData
+          setAnalyticsData(data)
+          setIsLoading(false)
+        })
+        .catch((error) => {
+          console.error("Error fetching analytics data:", error)
+          setIsLoading(false)
+        })
+    }
+  }, [user?.organization])
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="inline-block size-8 animate-spin rounded-full border-4 border-white/20 border-t-white"></div>
+            <p className="mt-4 text-sm text-slate-400">Loading analytics...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
+
+  if (!analyticsData) {
+    return (
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div className="rounded-2xl border border-red-500/30 bg-red-500/10 p-6 text-center text-red-400">
+          Unable to load analytics data. Please try again later.
+        </div>
+      </div>
+    )
+  }
+
+  const displayData = [
+    {
+      name: "Revenue Analytics",
+      value: analyticsData.revenueAnalytics.value,
+      change: analyticsData.revenueAnalytics.change,
+      period: analyticsData.revenueAnalytics.period,
+    },
+    {
+      name: "Cost Analysis",
+      value: analyticsData.costAnalysis.value,
+      change: analyticsData.costAnalysis.change,
+      period: analyticsData.costAnalysis.period,
+    },
+    {
+      name: "Profit Margin",
+      value: analyticsData.profitMargin.value,
+      change: analyticsData.profitMargin.change,
+      period: analyticsData.profitMargin.period,
+    },
   ]
 
   return (
@@ -34,7 +98,7 @@ export default function AnalyticsPage() {
         animate="visible"
         variants={staggerContainer}
       >
-        {analyticsData.map((item) => (
+        {displayData.map((item) => (
           <motion.div
             key={item.name}
             className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl"
@@ -45,7 +109,12 @@ export default function AnalyticsPage() {
               ${(item.value / 1000000).toFixed(2)}M
             </p>
             <div className="mt-4 flex items-center gap-2">
-              <span className="text-sm text-emerald-400">{item.change}</span>
+              <span
+                className={`text-sm ${item.change >= 0 ? "text-emerald-400" : "text-red-400"}`}
+              >
+                {item.change >= 0 ? "+" : ""}
+                {item.change.toFixed(1)}%
+              </span>
               <span className="text-xs text-slate-500">{item.period}</span>
             </div>
           </motion.div>
@@ -62,7 +131,7 @@ export default function AnalyticsPage() {
         <div className="h-64 rounded-xl border border-white/5 bg-black/30 p-4">
           <ResponsiveContainer width="100%" height="100%">
             <LineChart
-              data={chartData}
+              data={analyticsData.chartData}
               margin={{ top: 5, right: 5, left: 5, bottom: 5 }}
               style={{
                 transition: "all 0.3s ease-in-out",
