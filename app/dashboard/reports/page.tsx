@@ -1,36 +1,66 @@
 "use client"
 
+import { useEffect, useState } from "react"
 import { motion } from "framer-motion"
 
 import { fadeInUp, staggerContainer } from "@/components/sections/motion-presets"
+import { useUser } from "@/lib/hooks/use-user"
+
+interface Report {
+  id: string
+  title: string
+  date: string
+  type: string
+  status: string
+  periodStart?: string
+  periodEnd?: string
+  revenue?: number
+  cost?: number
+  profit?: number
+  grossMargin?: number
+  operatingMargin?: number
+  netMargin?: number
+}
 
 export default function ReportsPage() {
-  const reports = [
-    {
-      title: "Q4 Financial Report",
-      date: "2024-01-15",
-      type: "Financial",
-      status: "Published",
-    },
-    {
-      title: "Monthly Performance Summary",
-      date: "2024-01-10",
-      type: "Performance",
-      status: "Draft",
-    },
-    {
-      title: "ESG Compliance Report",
-      date: "2024-01-05",
-      type: "Compliance",
-      status: "Published",
-    },
-    {
-      title: "Risk Assessment Analysis",
-      date: "2024-01-01",
-      type: "Risk",
-      status: "Published",
-    },
-  ]
+  const { user } = useUser()
+  const [reports, setReports] = useState<Report[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+
+  useEffect(() => {
+    if (user?.organization) {
+      setIsLoading(true)
+      fetch("/api/reports", {
+        method: "GET",
+        credentials: "include",
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            throw new Error(`Failed to fetch: ${res.status}`)
+          }
+          const data = (await res.json()) as { reports: Report[] }
+          setReports(data.reports)
+          setIsLoading(false)
+        })
+        .catch((error) => {
+          console.error("Error fetching reports:", error)
+          setIsLoading(false)
+        })
+    }
+  }, [user?.organization])
+
+  if (isLoading) {
+    return (
+      <div className="mx-auto max-w-7xl space-y-6">
+        <div className="flex items-center justify-center py-12">
+          <div className="text-center">
+            <div className="inline-block size-8 animate-spin rounded-full border-4 border-white/20 border-t-white"></div>
+            <p className="mt-4 text-sm text-slate-400">Loading reports...</p>
+          </div>
+        </div>
+      </div>
+    )
+  }
 
   return (
     <div className="mx-auto max-w-7xl space-y-6">
@@ -39,15 +69,25 @@ export default function ReportsPage() {
         <p className="mt-2 text-slate-400">View and manage your analytics reports</p>
       </motion.div>
 
-      <motion.div
-        className="space-y-4"
-        initial="hidden"
-        animate="visible"
-        variants={staggerContainer}
-      >
-        {reports.map((report, index) => (
+      {reports.length === 0 ? (
+        <motion.div
+          initial="hidden"
+          animate="visible"
+          variants={fadeInUp}
+          className="rounded-2xl border border-white/10 bg-white/5 p-6 text-center backdrop-blur-xl"
+        >
+          <p className="text-slate-400">No reports available yet.</p>
+        </motion.div>
+      ) : (
+        <motion.div
+          className="space-y-4"
+          initial="hidden"
+          animate="visible"
+          variants={staggerContainer}
+        >
+          {reports.map((report) => (
           <motion.div
-            key={index}
+            key={report.id}
             className="rounded-2xl border border-white/10 bg-white/5 p-6 backdrop-blur-xl"
             variants={fadeInUp}
           >
@@ -70,14 +110,21 @@ export default function ReportsPage() {
                 >
                   {report.status}
                 </span>
-                <button className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10">
+                <button
+                  onClick={() => {
+                    // TODO: Implement report view modal or page
+                    console.log("View report:", report.id)
+                  }}
+                  className="rounded-lg border border-white/10 bg-white/5 px-4 py-2 text-sm text-white transition hover:bg-white/10"
+                >
                   View
                 </button>
               </div>
             </div>
           </motion.div>
         ))}
-      </motion.div>
+        </motion.div>
+      )}
     </div>
   )
 }
