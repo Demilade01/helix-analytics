@@ -6,7 +6,6 @@ import { LineChart, Line, XAxis, YAxis, CartesianGrid, Tooltip, ResponsiveContai
 
 import { fadeInUp, staggerContainer } from "@/components/sections/motion-presets"
 import { useUser } from "@/lib/hooks/use-user"
-import { fetchProfitabilityData } from "@/lib/api/mock-profitability"
 import type { ProfitabilityData, ProfitabilityFilters } from "@/lib/types/profitability"
 import { ProfitabilityFilters as FiltersComponent } from "@/components/dashboard/profitability-filters"
 import { ProfitabilityTable } from "@/components/dashboard/profitability-table"
@@ -40,19 +39,42 @@ export default function DashboardPage() {
   })
 
   useEffect(() => {
-    if (user?.sector && user?.organization) {
+    if (user?.organization) {
       setIsLoading(true)
-      fetchProfitabilityData(user.sector, user.organization, filters)
-        .then((data) => {
+      const params = new URLSearchParams({
+        startDate: filters.dateRange.start.toISOString(),
+        endDate: filters.dateRange.end.toISOString(),
+      })
+      if (filters.department) {
+        params.append("department", filters.department)
+      }
+
+      fetch(`/api/profitability?${params.toString()}`, {
+        method: "GET",
+        credentials: "include",
+      })
+        .then(async (res) => {
+          if (!res.ok) {
+            if (res.status === 401) {
+              // Unauthorized - user might need to re-login
+              console.error("Unauthorized access")
+              setProfitabilityData(null)
+              setIsLoading(false)
+              return
+            }
+            throw new Error(`Failed to fetch: ${res.status}`)
+          }
+          const data = (await res.json()) as ProfitabilityData
           setProfitabilityData(data)
           setIsLoading(false)
         })
         .catch((error) => {
           console.error("Error fetching profitability data:", error)
+          setProfitabilityData(null)
           setIsLoading(false)
         })
     }
-  }, [user?.sector, user?.organization, filters])
+  }, [user?.organization, filters])
 
   if (isLoading) {
     return (
