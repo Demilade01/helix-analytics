@@ -63,8 +63,8 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
 
       <div className="relative z-10 flex min-h-screen">
         {/* Sidebar */}
-        <aside className="hidden w-64 border-r border-white/10 bg-white/5 backdrop-blur-xl lg:block">
-          <div className="sticky top-0 flex h-screen flex-col p-6">
+        <aside className="fixed left-0 top-0 hidden h-screen w-64 border-r border-white/10 bg-white/5 backdrop-blur-xl lg:block">
+          <div className="flex h-full flex-col p-6">
             <Link href="/" className="mb-8 text-xl font-semibold tracking-tight text-white">
               Helix Analytics
             </Link>
@@ -109,7 +109,7 @@ function DashboardLayoutContent({ children }: { children: React.ReactNode }) {
         </aside>
 
         {/* Main Content */}
-        <main className="flex-1 overflow-y-auto pb-20 lg:pb-0">
+        <main className="ml-0 flex-1 overflow-y-auto pb-20 lg:ml-64 lg:pb-0">
           {/* Mobile Header */}
           <header className="sticky top-0 z-40 border-b border-white/10 bg-[#010203]/80 px-4 py-4 backdrop-blur-xl lg:hidden">
             <div className="flex items-center justify-center">
