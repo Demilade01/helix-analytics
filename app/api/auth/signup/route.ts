@@ -33,24 +33,31 @@ export async function POST(request: Request) {
     const sectorSlug = slugify(sector)
     const organizationSlug = `${sectorSlug}-${slugify(organization)}`
 
-    const sectorRecord = await prisma.sector.upsert({
+    // Find or create sector
+    let sectorRecord = await prisma.sector.findUnique({
       where: { slug: sectorSlug },
-      update: { name: sector },
-      create: { name: sector, slug: sectorSlug },
     })
 
-    const organizationRecord = await prisma.organization.upsert({
-      where: { slug: organizationSlug },
-      update: {
-        name: organization,
-        sectorId: sectorRecord.id,
-      },
-      create: {
-        name: organization,
-        slug: organizationSlug,
-        sectorId: sectorRecord.id,
-      },
+    if (!sectorRecord) {
+      sectorRecord = await prisma.sector.create({
+        data: { name: sector, slug: sectorSlug },
+      })
+    }
+
+    // Find or create organization using the unique constraint (name, sectorId)
+    let organizationRecord = await prisma.organization.findUnique({
+      where: { name_sectorId: { name: organization, sectorId: sectorRecord.id } },
     })
+
+    if (!organizationRecord) {
+      organizationRecord = await prisma.organization.create({
+        data: {
+          name: organization,
+          slug: organizationSlug,
+          sectorId: sectorRecord.id,
+        },
+      })
+    }
 
     const hashedPassword = await bcrypt.hash(password, 10)
 
