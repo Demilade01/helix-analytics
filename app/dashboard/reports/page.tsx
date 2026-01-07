@@ -5,6 +5,45 @@ import { motion } from "framer-motion"
 
 import { fadeInUp, staggerContainer } from "@/components/sections/motion-presets"
 import { useUser } from "@/lib/hooks/use-user"
+
+// Format large numbers with K/M notation
+function formatCompactCurrency(value: number, currency: string): { display: string; full: string } {
+  const full = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  }).format(value)
+
+  const absValue = Math.abs(value)
+  const currencySymbol = new Intl.NumberFormat("en-US", {
+    style: "currency",
+    currency,
+    minimumFractionDigits: 0,
+    maximumFractionDigits: 0,
+  })
+    .format(0)
+    .replace(/\d/g, "")
+    .trim()
+
+  let display: string
+
+  if (absValue >= 1_000_000) {
+    // Millions
+    const millions = value / 1_000_000
+    const rounded = Math.round(millions * 10) / 10
+    display = `${currencySymbol}${rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1)}M`
+  } else if (absValue >= 1_000) {
+    // Thousands
+    const thousands = value / 1_000
+    const rounded = Math.round(thousands * 10) / 10
+    display = `${currencySymbol}${rounded % 1 === 0 ? rounded.toString() : rounded.toFixed(1)}K`
+  } else {
+    display = full
+  }
+
+  return { display, full }
+}
 import { Dialog, DialogContent, DialogHeader, DialogTitle } from "@/components/ui/dialog"
 
 interface Report {
@@ -221,33 +260,36 @@ export default function ReportsPage() {
                 <div className="grid gap-4 sm:grid-cols-3">
                   <div className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4">
                     <p className="text-sm text-slate-400">Revenue</p>
-                    <p className="mt-2 truncate text-2xl font-semibold text-white">
-                      {new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency: selectedReport.currency,
-                        minimumFractionDigits: 0,
-                      }).format(selectedReport.revenue)}
-                    </p>
+                    {(() => {
+                      const { display, full } = formatCompactCurrency(selectedReport.revenue, selectedReport.currency)
+                      return (
+                        <p className="mt-2 text-2xl font-semibold text-white" title={full}>
+                          {display}
+                        </p>
+                      )
+                    })()}
                   </div>
                   <div className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4">
                     <p className="text-sm text-slate-400">Costs</p>
-                    <p className="mt-2 truncate text-2xl font-semibold text-white">
-                      {new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency: selectedReport.currency,
-                        minimumFractionDigits: 0,
-                      }).format(selectedReport.cost)}
-                    </p>
+                    {(() => {
+                      const { display, full } = formatCompactCurrency(selectedReport.cost, selectedReport.currency)
+                      return (
+                        <p className="mt-2 text-2xl font-semibold text-white" title={full}>
+                          {display}
+                        </p>
+                      )
+                    })()}
                   </div>
                   <div className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4">
                     <p className="text-sm text-slate-400">Profit</p>
-                    <p className="mt-2 truncate text-2xl font-semibold text-white">
-                      {new Intl.NumberFormat("en-US", {
-                        style: "currency",
-                        currency: selectedReport.currency,
-                        minimumFractionDigits: 0,
-                      }).format(selectedReport.profit)}
-                    </p>
+                    {(() => {
+                      const { display, full } = formatCompactCurrency(selectedReport.profit, selectedReport.currency)
+                      return (
+                        <p className="mt-2 text-2xl font-semibold text-white" title={full}>
+                          {display}
+                        </p>
+                      )
+                    })()}
                   </div>
                 </div>
 
@@ -274,32 +316,39 @@ export default function ReportsPage() {
                   <div>
                     <h3 className="mb-4 text-lg font-semibold text-white">Key Performance Indicators</h3>
                     <div className="grid gap-4 sm:grid-cols-2">
-                      {selectedReport.kpis.map((kpi) => (
-                        <div key={kpi.label} className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4">
-                          <p className="text-sm text-slate-400">{kpi.label}</p>
-                          <p className="mt-2 text-xl font-semibold text-white">
-                            {kpi.format === "percentage"
-                              ? `${kpi.value.toFixed(1)}%`
-                              : kpi.format === "currency"
-                                ? new Intl.NumberFormat("en-US", {
-                                    style: "currency",
-                                    currency: selectedReport.currency,
-                                    minimumFractionDigits: 0,
-                                  }).format(kpi.value)
-                                : kpi.value.toLocaleString()}
-                          </p>
-                          {kpi.deltaPercent !== null && (
-                            <p
-                              className={`mt-1 text-xs ${
-                                kpi.deltaPercent >= 0 ? "text-emerald-400" : "text-red-400"
-                              }`}
-                            >
-                              {kpi.deltaPercent >= 0 ? "+" : ""}
-                              {kpi.deltaPercent.toFixed(1)}% vs target
+                      {selectedReport.kpis.map((kpi) => {
+                        let display: string
+                        let full: string | null = null
+
+                        if (kpi.format === "percentage") {
+                          display = `${kpi.value.toFixed(1)}%`
+                        } else if (kpi.format === "currency") {
+                          const formatted = formatCompactCurrency(kpi.value, selectedReport.currency)
+                          display = formatted.display
+                          full = formatted.full
+                        } else {
+                          display = kpi.value.toLocaleString()
+                        }
+
+                        return (
+                          <div key={kpi.label} className="min-w-0 rounded-xl border border-white/10 bg-white/5 p-4">
+                            <p className="text-sm text-slate-400">{kpi.label}</p>
+                            <p className="mt-2 text-xl font-semibold text-white" title={full || undefined}>
+                              {display}
                             </p>
-                          )}
-                        </div>
-                      ))}
+                            {kpi.deltaPercent !== null && (
+                              <p
+                                className={`mt-1 text-xs ${
+                                  kpi.deltaPercent >= 0 ? "text-emerald-400" : "text-red-400"
+                                }`}
+                              >
+                                {kpi.deltaPercent >= 0 ? "+" : ""}
+                                {kpi.deltaPercent.toFixed(1)}% vs target
+                              </p>
+                            )}
+                          </div>
+                        )
+                      })}
                     </div>
                   </div>
                 )}
@@ -317,13 +366,14 @@ export default function ReportsPage() {
                               <p className="mt-1 text-sm text-slate-400">{dept.margin.toFixed(1)}% margin</p>
                             </div>
                             <div className="text-right">
-                              <p className="font-semibold text-white">
-                                {new Intl.NumberFormat("en-US", {
-                                  style: "currency",
-                                  currency: selectedReport.currency,
-                                  minimumFractionDigits: 0,
-                                }).format(dept.revenue)}
-                              </p>
+                              {(() => {
+                                const { display, full } = formatCompactCurrency(dept.revenue, selectedReport.currency)
+                                return (
+                                  <p className="font-semibold text-white" title={full}>
+                                    {display}
+                                  </p>
+                                )
+                              })()}
                               <p className="text-xs text-slate-400">{dept.revenueShare.toFixed(1)}% of total</p>
                             </div>
                           </div>
@@ -345,13 +395,14 @@ export default function ReportsPage() {
                               <p className="font-medium text-white">{cost.category}</p>
                               <p className="mt-1 text-sm text-slate-400">{cost.percentage.toFixed(0)}% of total costs</p>
                             </div>
-                            <p className="font-semibold text-white">
-                              {new Intl.NumberFormat("en-US", {
-                                style: "currency",
-                                currency: selectedReport.currency,
-                                minimumFractionDigits: 0,
-                              }).format(cost.amount)}
-                            </p>
+                            {(() => {
+                              const { display, full } = formatCompactCurrency(cost.amount, selectedReport.currency)
+                              return (
+                                <p className="font-semibold text-white" title={full}>
+                                  {display}
+                                </p>
+                              )
+                            })()}
                           </div>
                         </div>
                       ))}
