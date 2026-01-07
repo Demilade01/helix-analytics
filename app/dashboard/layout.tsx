@@ -3,7 +3,7 @@
 import React from "react"
 import Link from "next/link"
 import { usePathname, useRouter } from "next/navigation"
-import { BarChart3, LineChart, FileText, Settings, LogOut } from "lucide-react"
+import { BarChart3, LineChart, FileText, Settings, LogOut, Upload } from "lucide-react"
 
 import { Button } from "@/components/ui/button"
 import { useUser } from "@/lib/hooks/use-user"
@@ -13,6 +13,7 @@ const navItems = [
   { href: "/dashboard", label: "Overview", icon: BarChart3 },
   { href: "/dashboard/analytics", label: "Analytics", icon: LineChart },
   { href: "/dashboard/reports", label: "Reports", icon: FileText },
+  { href: "/dashboard/data", label: "Data", icon: Upload },
   { href: "/dashboard/settings", label: "Settings", icon: Settings },
 ]
 
