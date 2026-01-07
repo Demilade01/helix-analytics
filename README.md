@@ -13,6 +13,10 @@ Helix Analytics is an internal profitability analytics dashboard designed for mu
 - **Sector-Aware Dashboards**: Automatically detects user context (sector + organization) and displays relevant KPIs
 - **Real-Time Profitability Metrics**: Live financial insights with configurable filters
 - **Multi-Organization Support**: Secure, isolated data views per organization
+- **JWT Authentication**: Secure session management with HTTP-only cookies
+- **Database-Backed**: PostgreSQL with Prisma ORM for reliable data storage
+- **Comprehensive Reports**: Detailed financial reports with metrics, KPIs, and breakdowns
+- **Compact Currency Display**: Large numbers formatted as K/M notation with full values on hover
 - **Glassy Modern UI**: Premium dark theme with translucent panels and backdrop blur effects
 - **Responsive Design**: Optimized for desktop, tablet, and mobile devices
 - **Config-Driven Architecture**: Easy to extend with new sectors and KPIs
@@ -21,12 +25,15 @@ Helix Analytics is an internal profitability analytics dashboard designed for mu
 
 - **Framework**: Next.js 16 (App Router)
 - **Language**: TypeScript
+- **Database**: PostgreSQL with Prisma ORM
+- **Authentication**: JWT-based session management with HTTP-only cookies
 - **Styling**: TailwindCSS 4 with custom glassy theme
 - **UI Components**: shadcn/ui + Radix UI primitives
 - **Charts**: Recharts
 - **Animations**: Framer Motion
 - **State Management**: React Context API
 - **Icons**: Lucide React
+- **Password Hashing**: bcryptjs
 
 ## Design System
 
@@ -84,18 +91,35 @@ pnpm dev
 
 ### Environment Variables
 
-Create a `.env.local` file in the root directory:
+Create a `.env` file in the root directory:
 
 ```env
-# Google OAuth (for authentication)
-NEXT_PUBLIC_GOOGLE_CLIENT_ID=your_google_client_id
-GOOGLE_CLIENT_SECRET=your_google_client_secret
+# Database
+DATABASE_URL=postgresql://user:password@localhost:5432/helix_analytics?schema=public
 
-# JWT Secret
-JWT_SECRET=your_jwt_secret
+# JWT Authentication
+JWT_SECRET=your_jwt_secret_key_here
+JWT_EXPIRES_IN=7d
 
-# API Configuration
-NEXT_PUBLIC_API_URL=http://localhost:3000/api
+# Next.js
+NEXT_PUBLIC_APP_URL=http://localhost:3000
+```
+
+### Database Setup
+
+1. Ensure PostgreSQL is running and create a database:
+```bash
+createdb helix_analytics
+```
+
+2. Run Prisma migrations:
+```bash
+npx prisma migrate dev
+```
+
+3. (Optional) Seed the database with sample data:
+```bash
+npm run seed
 ```
 
 ## Project Structure
@@ -103,7 +127,20 @@ NEXT_PUBLIC_API_URL=http://localhost:3000/api
 ```
 helix-analytics/
 ├── app/
-│   ├── dashboard/          # Dashboard pages and layout
+│   ├── api/                 # API routes
+│   │   ├── auth/           # Authentication endpoints (login, signup, logout, me)
+│   │   ├── analytics/       # Analytics data endpoint
+│   │   ├── profitability/  # Profitability data endpoint
+│   │   ├── reports/        # Reports endpoints
+│   │   └── user/           # User management endpoints
+│   ├── dashboard/          # Dashboard pages
+│   │   ├── analytics/      # Analytics page
+│   │   ├── reports/        # Reports page
+│   │   ├── settings/       # Settings page
+│   │   ├── layout.tsx      # Dashboard layout with sidebar
+│   │   └── page.tsx        # Dashboard overview
+│   ├── login/              # Login page
+│   ├── signup/             # Signup page
 │   ├── layout.tsx          # Root layout
 │   ├── page.tsx            # Landing page
 │   └── globals.css         # Global styles
@@ -121,12 +158,19 @@ helix-analytics/
 ├── lib/
 │   ├── api/                # API client and mock data
 │   │   └── mock-profitability.ts
+│   ├── auth/               # Authentication utilities
+│   │   └── session.ts      # JWT session management
 │   ├── contexts/           # React contexts
 │   │   └── user-context.tsx
 │   ├── hooks/              # Custom React hooks
 │   │   └── use-user.ts
-│   └── types/               # TypeScript type definitions
-│       └── profitability.ts
+│   ├── prisma.ts           # Prisma client instance
+│   └── types/              # TypeScript type definitions
+│       ├── profitability.ts
+│       └── user.ts
+├── prisma/
+│   ├── schema.prisma       # Database schema
+│   └── seed.ts             # Database seeding script
 └── public/                  # Static assets
 ```
 
@@ -142,11 +186,18 @@ helix-analytics/
 
 ### Dashboard
 
-- **Profitability Overview**: KPI cards with real-time metrics
-- **Interactive Charts**: Time series and department breakdowns
+- **Overview Page**: KPI cards with real-time profitability metrics, interactive charts, and sortable data tables
+- **Analytics Page**: Deep dive analytics with time-series data, revenue/cost/profit comparisons, and performance trends
+- **Reports Page**: List of generated financial reports with detailed view modal showing:
+  - Key financial metrics (Revenue, Costs, Profit)
+  - Margin percentages (Gross, Operating, Net)
+  - KPIs with trend indicators
+  - Department revenue breakdown
+  - Cost breakdown by category
+- **Settings Page**: User profile management (name, email, organization, sector)
 - **Filterable Data**: Date range and department/product filters
-- **Data Tables**: Sortable profitability tables
-- **User Context**: Automatic sector and organization detection
+- **Compact Currency Formatting**: Large numbers displayed as K/M notation (e.g., $6.8M) with full value on hover
+- **User Context**: Automatic sector and organization detection from authenticated user
 
 ## Development
 
@@ -156,6 +207,9 @@ helix-analytics/
 - `npm run build` - Build for production
 - `npm run start` - Start production server
 - `npm run lint` - Run ESLint
+- `npm run seed` - Seed database with sample data
+- `npx prisma migrate dev` - Create and apply database migrations
+- `npx prisma studio` - Open Prisma Studio to view database data
 
 ### Code Style
 
@@ -167,28 +221,65 @@ helix-analytics/
 
 ### Data Flow
 
-1. User authenticates via Google OAuth
-2. Backend provides JWT with user context (sector, organization)
-3. Frontend stores user context in React Context
-4. Dashboard components fetch data based on user context
-5. Filters update data queries dynamically
+1. User signs up/logs in with email and password
+2. Backend hashes password with bcryptjs and creates user in database
+3. Backend generates JWT token with user context (sector, organization)
+4. JWT stored in HTTP-only cookie for secure session management
+5. Frontend stores user context in React Context
+6. Dashboard components fetch data from API routes based on user context
+7. API routes verify JWT from cookie and query database with Prisma
+8. Filters update data queries dynamically
+
+### Authentication
+
+- **Signup**: Email, password, first name, last name, sector, organization
+- **Login**: Email and password
+- **Session**: JWT stored in HTTP-only cookie (secure, not accessible via JavaScript)
+- **Authorization**: All API routes verify JWT before processing requests
+- **User Context**: React Context provides authenticated user data throughout the app
+
+### Database Schema
+
+- **Sectors**: Healthcare, Banking, Retail, Energy, Life Sciences, Public Sector
+- **Organizations**: Multiple organizations per sector
+- **Users**: Linked to sector and organization with role-based access
+- **Profitability Snapshots**: Period-based financial data
+- **Department Metrics**: Revenue, cost, profit by department
+- **Cost Categories**: Categorized cost breakdowns
+- **KPI Definitions & Values**: Configurable KPIs with trend tracking
 
 ### Component Architecture
 
 - **Server Components**: Landing page sections (where possible)
-- **Client Components**: Interactive dashboard components
+- **Client Components**: Interactive dashboard components, forms, charts
+- **API Routes**: Next.js route handlers for backend logic
 - **Shared Components**: Reusable UI primitives from shadcn/ui
 - **Context Providers**: User authentication and state management
 
 ## Roadmap
 
-- [ ] Complete authentication flow (Google OAuth + JWT)
-- [ ] Real API integration (currently using mock data)
-- [ ] Additional dashboard pages (Analytics, Reports, Settings)
+### Completed ✅
+
+- [x] Complete authentication flow (JWT-based with HTTP-only cookies)
+- [x] Real API integration with PostgreSQL database
+- [x] Dashboard pages (Overview, Analytics, Reports, Settings)
+- [x] Report detail view with comprehensive financial data
+- [x] Compact currency formatting (K/M notation)
+- [x] Custom scrollbar styling
+- [x] Password visibility toggles
+- [x] Database seeding with sample data
+
+### In Progress / Next Steps
+
 - [ ] Data export functionality (CSV, PDF)
-- [ ] Enhanced mobile navigation
+- [ ] Forgot password flow
 - [ ] Error boundaries and improved error handling
+- [ ] Toast notifications for user feedback
+- [ ] Enhanced mobile navigation
 - [ ] Performance optimizations (code splitting, caching)
+- [ ] Real-time updates (WebSockets or polling)
+- [ ] User roles and permissions system
+- [ ] Email notifications
 
 ## License
 
